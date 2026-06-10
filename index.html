@@ -1,0 +1,1603 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gestion des Projets - Tableau de Bord</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- SheetJS (Excel) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: "#3b82f6",
+              success: "#10b981",
+              warning: "#f59e0b",
+              danger: "#ef4444",
+              purple: "#8b5cf6",
+            },
+          },
+        },
+      };
+    </script>
+    <style>
+      body {
+        font-family: "Inter", system-ui, sans-serif;
+      }
+      /* Custom scrollbar */
+      ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+      }
+      ::-webkit-scrollbar-track {
+        background: #f1f5f9;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 4px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8;
+      }
+
+      .tab-btn {
+        transition: all 0.2s ease-in-out;
+      }
+      .tab-active {
+        background-color: #eff6ff;
+        color: #1d4ed8;
+      }
+      .tab-inactive {
+        color: #4b5563;
+      }
+      .tab-inactive:hover {
+        background-color: #f8fafc;
+        color: #111827;
+      }
+    </style>
+  </head>
+  <body
+    class="bg-slate-50 text-gray-800 h-screen overflow-hidden flex flex-col md:flex-row"
+  >
+    <!-- SIDEBAR -->
+    <aside
+      class="w-full md:w-64 bg-white border-r border-gray-200 flex-shrink-0 flex flex-col z-20 h-auto md:h-screen"
+    >
+      <div class="h-16 flex items-center px-6 border-b border-gray-100">
+        <i data-lucide="briefcase" class="w-7 h-7 text-blue-600 mr-3"></i>
+        <span class="font-bold text-xl text-gray-900 tracking-tight"
+          >Projets<span class="text-blue-600">PRO</span></span
+        >
+      </div>
+
+      <div class="p-4 flex-1 overflow-y-auto hidden md:block" id="mobile-menu">
+        <div class="space-y-1">
+          <p
+            class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 px-2"
+          >
+            Plan-ingénieur Boudeffa
+          </p>
+          <button
+            onclick="switchTab('dash1')"
+            id="tab-dash1"
+            class="tab-btn tab-active w-full flex items-center px-3 py-2.5 rounded-xl text-sm font-medium"
+          >
+            <i data-lucide="pie-chart" class="w-5 h-5 mr-3"></i> Plan de charge
+          </button>
+          <button
+            onclick="switchTab('dash2')"
+            id="tab-dash2"
+            class="tab-btn tab-inactive w-full flex items-center px-3 py-2.5 rounded-xl text-sm font-medium"
+          >
+            <i data-lucide="calendar-check" class="w-5 h-5 mr-3"></i> Réalisations 
+          </button>
+          <button
+            onclick="switchTab('dash3')"
+            id="tab-dash3"
+            class="tab-btn tab-inactive w-full flex items-center px-3 py-2.5 rounded-xl text-sm font-medium"
+          >
+            <i data-lucide="layers" class="w-5 h-5 mr-3"></i> Détail Prestations
+          </button>
+          <button
+            onclick="switchTab('dash4')"
+            id="tab-dash4"
+            class="tab-btn tab-inactive w-full flex items-center px-3 py-2.5 rounded-xl text-sm font-medium"
+          >
+            <i data-lucide="bar-chart-2" class="w-5 h-5 mr-3"></i>
+             Évaluations
+          </button>
+          <button
+            onclick="switchTab('dash5')"
+            id="tab-dash5"
+            class="tab-btn tab-inactive w-full flex items-center px-3 py-2.5 rounded-xl text-sm font-medium"
+          >
+            <i data-lucide="clock" class="w-5 h-5 mr-3"></i> Reste à Réaliser
+          </button>
+          <button
+            onclick="switchTab('dash6')"
+            id="tab-dash6"
+            class="tab-btn tab-inactive w-full flex items-center px-3 py-2.5 rounded-xl text-sm font-medium"
+          >
+            <i data-lucide="activity" class="w-5 h-5 mr-3"></i> Examen TET
+          </button>
+          <button
+            onclick="switchTab('dash7')"
+            id="tab-dash7"
+            class="tab-btn tab-inactive w-full flex items-center px-3 py-2.5 rounded-xl text-sm font-medium bg-gradient-to-r hover:from-purple-50 hover:to-blue-50"
+          >
+            <i data-lucide="sparkles" class="w-5 h-5 mr-3 text-purple-500"></i> Analyse IA
+          </button>
+          <button
+            onclick="switchTab('data')"
+            id="tab-data"
+            class="tab-btn tab-inactive w-full flex items-center px-3 py-2.5 rounded-xl text-sm font-medium"
+          >
+            <i data-lucide="file-spreadsheet" class="w-5 h-5 mr-3"></i> Base de
+            données
+          </button>
+        </div>
+      </div>
+
+      <!-- Bouton Menu Mobile (Visible uniquement sur petits écrans) -->
+      <div
+        class="md:hidden p-4 border-b border-gray-100 flex justify-center space-x-2 overflow-x-auto"
+      >
+        <button
+          onclick="switchTab('dash1')"
+          class="px-3 py-2 bg-blue-50 text-blue-600 rounded-lg text-sm font-medium whitespace-nowrap"
+        >
+          Dash 1
+        </button>
+        <button
+          onclick="switchTab('dash2')"
+          class="px-3 py-2 bg-gray-100 rounded-lg text-sm font-medium whitespace-nowrap"
+        >
+          Dash 2
+        </button>
+        <button
+          onclick="switchTab('dash3')"
+          class="px-3 py-2 bg-gray-100 rounded-lg text-sm font-medium whitespace-nowrap"
+        >
+          Dash 3
+        </button>
+        <button
+          onclick="switchTab('dash4')"
+          class="px-3 py-2 bg-gray-100 rounded-lg text-sm font-medium whitespace-nowrap"
+        >
+          Dash 4
+        </button>
+        <button
+          onclick="switchTab('dash5')"
+          class="px-3 py-2 bg-gray-100 rounded-lg text-sm font-medium whitespace-nowrap"
+        >
+          Reste
+        </button>
+        <button
+          onclick="switchTab('dash6')"
+          class="px-3 py-2 bg-gray-100 rounded-lg text-sm font-medium whitespace-nowrap"
+        >
+          TET
+        </button>
+        <button
+          onclick="switchTab('dash7')"
+          class="px-3 py-2 bg-purple-50 text-purple-700 border border-purple-100 rounded-lg text-sm font-medium whitespace-nowrap flex items-center"
+        >
+          <i data-lucide="sparkles" class="w-4 h-4 mr-1"></i> Analyse
+        </button>
+        <button
+          onclick="switchTab('data')"
+          class="px-3 py-2 bg-gray-100 rounded-lg text-sm font-medium whitespace-nowrap"
+        >
+          Données
+        </button>
+      </div>
+
+      <div class="p-4 border-t border-gray-100 bg-white">
+        <label
+          class="w-full flex justify-center items-center px-4 py-2.5 bg-gray-900 hover:bg-blue-600 text-white rounded-xl cursor-pointer shadow-sm transition-colors text-sm font-medium group"
+        >
+          <i
+            data-lucide="upload"
+            class="w-4 h-4 mr-2 group-hover:-translate-y-0.5 transition-transform"
+          ></i>
+          Importer Excel
+          <input
+            type="file"
+            id="excel-upload"
+            class="hidden"
+            accept=".xlsx, .xls, .csv"
+          />
+        </label>
+      </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="flex-1 flex flex-col h-screen overflow-hidden">
+      <!-- Header -->
+      <header
+        class="h-16 bg-white/80 backdrop-blur-md border-b border-gray-200 flex items-center justify-between px-8 z-10 flex-shrink-0"
+      >
+        <h1 id="page-title" class="text-xl font-bold text-gray-800">
+          Plan de charge
+        </h1>
+        <div class="flex items-center space-x-4">
+          <div
+            class="flex items-center text-sm font-medium text-gray-600 bg-gray-100 px-3 py-1.5 rounded-full"
+          >
+            <span
+              class="w-2 h-2 rounded-full bg-green-500 mr-2 animate-pulse"
+            ></span>
+            Données en direct
+          </div>
+        </div>
+      </header>
+
+      <!-- Scrollable Content -->
+      <div class="flex-1 overflow-y-auto p-4 sm:p-8 relative">
+        <!-- Notice -->
+        <div
+          class="bg-blue-50 border border-blue-100 rounded-xl p-4 mb-8 flex items-start"
+        >
+          <i
+            data-lucide="info"
+            class="w-5 h-5 text-blue-500 mr-3 flex-shrink-0 mt-0.5"
+          ></i>
+          <div class="text-sm text-blue-800">
+            <strong>Vision analytique :</strong>
+            "Une approche data-driven pour Transformer les données en décisions
+            opérationnelles."
+          </div>
+        </div>
+
+        <!-- VIEW: DASHBOARD 01 -->
+        <div id="view-dash1" class="block space-y-6 fade-in">
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <!-- KPIs injectés en JS -->
+            <div
+              class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex items-start"
+            >
+              <div class="p-3 rounded-xl bg-blue-100 mr-4">
+                <i
+                  data-lucide="layout-dashboard"
+                  class="w-6 h-6 text-blue-600"
+                ></i>
+              </div>
+              <div>
+                <p class="text-sm font-medium text-gray-500 mb-1">
+                  Total des Affaires
+                </p>
+                <h3 id="kpi-total" class="text-3xl font-bold text-gray-900">
+                  -
+                </h3>
+              </div>
+            </div>
+            <div
+              class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex items-start"
+            >
+              <div class="p-3 rounded-xl bg-green-100 mr-4">
+                <i
+                  data-lucide="check-circle"
+                  class="w-6 h-6 text-green-600"
+                ></i>
+              </div>
+              <div>
+                <p class="text-sm font-medium text-gray-500 mb-1">
+                  Livrables Établis (100%)
+                </p>
+                <h3 id="kpi-100" class="text-3xl font-bold text-gray-900">-</h3>
+                <p id="kpi-100-sub" class="text-xs text-gray-400 mt-1">-</p>
+              </div>
+            </div>
+            <div
+              class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex items-start"
+            >
+              <div class="p-3 rounded-xl bg-red-100 mr-4">
+                <i data-lucide="x-circle" class="w-6 h-6 text-red-600"></i>
+              </div>
+              <div>
+                <p class="text-sm font-medium text-gray-500 mb-1">
+                  Livrables Non Établis (<100%)
+                </p>
+                <h3 id="kpi-0" class="text-3xl font-bold text-gray-900">-</h3>
+              </div>
+            </div>
+            <div
+              class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex items-start"
+            >
+              <div class="p-3 rounded-xl bg-gray-100 mr-4">
+                <i data-lucide="ban" class="w-6 h-6 text-gray-600"></i>
+              </div>
+              <div>
+                <p class="text-sm font-medium text-gray-500 mb-1">
+                  Affaires Annulées (N)
+                </p>
+                <h3 id="kpi-n" class="text-3xl font-bold text-gray-900">-</h3>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div
+              class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6"
+            >
+              <h3
+                class="text-lg font-semibold text-gray-800 mb-6 flex items-center"
+              >
+                <div class="w-1.5 h-6 bg-blue-600 rounded-full mr-3"></div>
+                Nombre d'affaires par Prestation
+              </h3>
+              <div class="relative h-80 w-full">
+                <canvas id="chart-d1-bar"></canvas>
+              </div>
+            </div>
+            <div
+              class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6"
+            >
+              <h3
+                class="text-lg font-semibold text-gray-800 mb-6 flex items-center"
+              >
+                <div class="w-1.5 h-6 bg-blue-600 rounded-full mr-3"></div>
+                Plan de charge (%)
+              </h3>
+              <div class="relative h-80 w-full">
+                <canvas id="chart-d1-pie"></canvas>
+              </div>
+            </div>
+          </div>
+          <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mt-6">
+            <h3 class="text-lg font-semibold text-gray-800 mb-6 flex items-center">
+              <div class="w-1.5 h-6 bg-blue-600 rounded-full mr-3"></div>
+              Plan de Charge Actif par Année (Hors Annulées)
+            </h3>
+            <div class="relative h-80 w-full">
+              <canvas id="chart-d1-stacked"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- VIEW: DASHBOARD 02 -->
+        <div id="view-dash2" class="hidden space-y-6 fade-in">
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div
+              class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6"
+            >
+              <h3
+                class="text-lg font-semibold text-gray-800 mb-6 flex items-center"
+              >
+                <div class="w-1.5 h-6 bg-blue-600 rounded-full mr-3"></div>
+                Réalisé vs Reste / année
+              </h3>
+              <div class="relative h-80 w-full">
+                <canvas id="chart-d2-status"></canvas>
+              </div>
+            </div>
+            <div
+              class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6"
+            >
+              <h3
+                class="text-lg font-semibold text-gray-800 mb-6 flex items-center"
+              >
+                <div class="w-1.5 h-6 bg-blue-600 rounded-full mr-3"></div>
+                Prestations réalisées(100%)/année
+              </h3>
+              <div class="relative h-80 w-full">
+                <canvas id="chart-d2-prest"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- VIEW: DASHBOARD 03 -->
+        <div id="view-dash3" class="hidden space-y-6 fade-in">
+          <div id="dash3-cards" class="grid grid-cols-2 lg:grid-cols-5 gap-4">
+            <!-- Injecté via JS -->
+          </div>
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div
+              class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6"
+            >
+              <h3
+                class="text-lg font-semibold text-gray-800 mb-6 flex items-center"
+              >
+                <div class="w-1.5 h-6 bg-blue-600 rounded-full mr-3"></div>
+                Prestations réalisées par type
+              </h3>
+              <div class="relative h-80 w-full">
+                <canvas id="chart-d3-magnifique"></canvas>
+              </div>
+            </div>
+            <div
+              class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6"
+            >
+              <h3
+                class="text-lg font-semibold text-gray-800 mb-6 flex items-center"
+              >
+                <div class="w-1.5 h-6 bg-blue-600 rounded-full mr-3"></div>
+                Prestations réalisées par année
+              </h3>
+              <div class="relative h-80 w-full">
+                <canvas id="chart-d3-realized"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- VIEW: DASHBOARD 04 -->
+        <div id="view-dash4" class="hidden space-y-6 fade-in">
+          <!-- Première ligne : Global (Toutes prestations) -->
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div
+              class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6"
+            >
+              <h3
+                class="text-lg font-semibold text-gray-800 mb-6 flex items-center"
+              >
+                <div class="w-1.5 h-6 bg-indigo-500 rounded-full mr-3"></div>
+                Évolution des réalisations (Global)
+              </h3>
+              <div class="relative h-80 w-full">
+                <canvas id="chart-d4-trend"></canvas>
+              </div>
+            </div>
+            <div
+              class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6"
+            >
+              <h3
+                class="text-lg font-semibold text-gray-800 mb-6 flex items-center"
+              >
+                <div class="w-1.5 h-6 bg-indigo-500 rounded-full mr-3"></div>
+                Réalisations par Prestation (Global)
+              </h3>
+              <div class="relative h-80 w-full">
+                <canvas id="chart-d4-prest"></canvas>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Deuxième ligne : Diag. & Éval. uniquement -->
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div
+              class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6"
+            >
+              <h3
+                class="text-lg font-semibold text-gray-800 mb-6 flex items-center"
+              >
+                <div class="w-1.5 h-6 bg-blue-500 rounded-full mr-3"></div>
+                Évolution des réalisations (Diag., Éval. & Exp.)
+              </h3>
+              <div class="relative h-80 w-full">
+                <canvas id="chart-d4-trend-diageval"></canvas>
+              </div>
+            </div>
+            <div
+              class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6"
+            >
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-2">
+                <h3
+                  class="text-lg font-semibold text-gray-800 flex items-center"
+                >
+                  <div class="w-1.5 h-6 bg-blue-500 rounded-full mr-3"></div>
+                  Réalisations par Prestation (Diag., Éval. & Exp.)
+                </h3>
+                <div class="flex flex-wrap items-center gap-4 text-sm text-gray-600 font-medium">
+                  <div class="flex items-center">
+                    <span class="w-3 h-3 rounded-sm bg-[#3b82f6] mr-2"></span>
+                    Diagnostic
+                  </div>
+                  <div class="flex items-center">
+                    <span class="w-3 h-3 rounded-sm bg-[#ef4444] mr-2"></span>
+                    Evaluation
+                  </div>
+                  <div class="flex items-center">
+                    <span class="w-3 h-3 rounded-sm bg-[#10b981] mr-2"></span>
+                    Expertise
+                  </div>
+                </div>
+              </div>
+              <div class="relative h-80 w-full">
+                <canvas id="chart-d4-prest-diageval"></canvas>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Troisième ligne : Ratios Mensuels (Courbes) -->
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Ratio Mensuel GLOBAL -->
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+              <h3 class="text-lg font-semibold text-gray-800 mb-6 flex items-center">
+                <div class="w-1.5 h-6 bg-indigo-600 rounded-full mr-3"></div>
+                Ratio Mensuel Global par Année
+              </h3>
+              <div class="relative h-80 w-full">
+                <canvas id="chart-d4-ratio-global-line"></canvas>
+              </div>
+            </div>
+            <!-- Ratio Mensuel SPECIFIQUE -->
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+              <h3 class="text-lg font-semibold text-gray-800 mb-6 flex items-center">
+                <div class="w-1.5 h-6 bg-blue-600 rounded-full mr-3"></div>
+                Ratio Mensuel (Diag., Éval. & Exp.)
+              </h3>
+              <div class="relative h-80 w-full">
+                <canvas id="chart-d4-ratio-line"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- VIEW: DASHBOARD 05 -->
+        <div id="view-dash5" class="hidden space-y-6 fade-in">
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div
+              class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6"
+            >
+              <h3
+                class="text-lg font-semibold text-gray-800 mb-6 flex items-center"
+              >
+                <div class="w-1.5 h-6 bg-blue-600 rounded-full mr-3"></div>
+                Prestations restantes (<100%) par Année
+              </h3>
+              <div class="relative h-80 w-full">
+                <canvas id="chart-d5-stacked"></canvas>
+              </div>
+            </div>
+            <div
+              class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6"
+            >
+              <h3
+                class="text-lg font-semibold text-gray-800 mb-6 flex items-center"
+              >
+                <div class="w-1.5 h-6 bg-blue-600 rounded-full mr-3"></div>
+                Volume du Reste à faire par Prestation
+              </h3>
+              <div class="relative h-80 w-full">
+                <canvas id="chart-d5-pie"></canvas>
+              </div>
+            </div>
+          </div>
+          <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+            <h3 class="text-lg font-semibold text-gray-800 mb-6 flex items-center">
+              <div class="w-1.5 h-6 bg-gray-600 rounded-full mr-3"></div>
+              Prestations Annulées (État: N) par Année et par Type
+            </h3>
+            <div class="relative h-80 w-full">
+              <canvas id="chart-d5-annulees"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- VIEW: DASHBOARD 06 (EXAMEN TET) -->
+        <div id="view-dash6" class="hidden space-y-6 fade-in">
+          <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+            <h3 class="text-lg font-semibold text-gray-800 mb-6 flex items-center">
+              <div class="w-1.5 h-6 bg-violet-600 rounded-full mr-3"></div>
+              Évolution du nombre de sites (Prestation Examen TET) par Année
+            </h3>
+            <div class="relative h-96 w-full">
+              <canvas id="chart-d6-tet"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- VIEW: DASHBOARD 07 (ANALYSE IA) -->
+        <div id="view-dash7" class="hidden space-y-6 fade-in">
+          <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div class="bg-gradient-to-r from-purple-600 to-blue-600 px-8 py-6">
+              <h2 class="text-2xl font-bold text-white flex items-center">
+                <i data-lucide="brain-circuit" class="w-7 h-7 mr-3"></i>
+                Analyse Intelligente du Plan de Charge
+              </h2>
+              <p class="text-purple-100 mt-2 text-sm">Génération automatique des insights basée sur l'état actuel de la base de données.</p>
+            </div>
+            <div class="p-8">
+              <div id="analysis-content" class="space-y-8">
+                <!-- Contenu généré en JS -->
+                <div class="flex items-center justify-center py-12 text-gray-400">
+                  <i data-lucide="loader-2" class="w-8 h-8 animate-spin mr-3"></i> Analyse en cours...
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- VIEW: DATA TABLE -->
+        <div id="view-data" class="hidden fade-in">
+          <div
+            class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden"
+          >
+            <div
+              class="px-6 py-5 border-b border-gray-100 flex flex-col lg:flex-row justify-between items-start lg:items-center bg-gray-50/50 gap-4"
+            >
+              <div class="flex items-center">
+                <div class="p-2 bg-blue-100 text-blue-600 rounded-lg mr-3">
+                  <i data-lucide="table" class="w-5 h-5"></i>
+                </div>
+                <div>
+                  <h3 class="text-lg font-semibold text-gray-800">
+                    Base de données des projets
+                  </h3>
+                  <p class="text-sm text-gray-500" id="table-count">
+                    0 projets listés
+                  </p>
+                </div>
+              </div>
+              <div class="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
+                <select id="filter-prestation" class="px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                  <option value="all">Toutes prestations</option>
+                  <option value="Diagnostic">Diagnostic</option>
+                  <option value="Expertise">Expertise</option>
+                  <option value="Examen des Travaux">Examen des Travaux</option>
+                  <option value="Evaluation">Evaluation</option>
+                  <option value="TET">TET</option>
+                </select>
+                <select id="filter-etat" class="px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                  <option value="all">Tous états</option>
+                  <option value="100">100% (Établi)</option>
+                  <option value="0">Reste à Réaliser (<100%)</option>
+                  <option value="N">Annulée (N)</option>
+                </select>
+                <div class="relative w-full sm:w-64">
+                  <i
+                    data-lucide="search"
+                    class="w-4 h-4 text-gray-400 absolute left-3 top-3"
+                  ></i>
+                  <input
+                    type="text"
+                    id="search-input"
+                    placeholder="Rechercher une convention..."
+                    class="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                  />
+                </div>
+              </div>
+            </div>
+            <div class="overflow-x-auto max-h-[600px] overflow-y-auto">
+              <table class="min-w-full divide-y divide-gray-200 relative">
+                <thead class="bg-gray-50 sticky top-0 z-10">
+                  <tr>
+                    <th
+                      class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider"
+                    >
+                      Convention
+                    </th>
+                    <th
+                      class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider"
+                    >
+                      Intitulé
+                    </th>
+                    <th
+                      class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider"
+                    >
+                      Localité
+                    </th>
+                    <th
+                      class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider"
+                    >
+                      Prestation
+                    </th>
+                    <th
+                      class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider"
+                    >
+                      Année
+                    </th>
+                    <th
+                      class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider"
+                    >
+                      État
+                    </th>
+                    <th
+                      class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider"
+                    >
+                      Année Réal.
+                    </th>
+                    <th
+                      class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider"
+                    >
+                      Nbr Sites
+                    </th>
+                  </tr>
+                </thead>
+                <tbody
+                  id="table-body"
+                  class="bg-white divide-y divide-gray-100 text-sm"
+                >
+                  <!-- Injecté via JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <script>
+      // --- CONSTANTES ET CONFIGURATION ---
+      const PRESTATIONS = [
+        "Diagnostic",
+        "Expertise",
+        "Examen des Travaux",
+        "Evaluation",
+        "TET",
+      ];
+      const YEARS = [2024, 2025, 2026, 2027, 2028];
+      const COLORS = {
+        Diagnostic: "#3b82f6", // blue
+        Expertise: "#10b981", // emerald
+        "Examen des Travaux": "#f59e0b", // amber
+        Evaluation: "#ef4444", // red
+        TET: "#8b5cf6", // violet
+        Autre: "#6b7280", // gray
+      };
+      const COLOR_ARRAY = Object.values(COLORS);
+
+      // Variables d'état
+      let projectsData = [];
+      let charts = {}; // Stocke les instances Chart.js
+      let currentSearch = "";
+      let currentFilterPrest = "all";
+      let currentFilterEtat = "all";
+
+      // Initialisation Lucide Icons
+      lucide.createIcons();
+
+      // --- GÉNÉRATION DE DONNÉES FACTICES ---
+      function generateMockData() {
+        const localities = [
+          "Alger",
+          "Oran",
+          "Constantine",
+          "Annaba",
+          "Sétif",
+          "Skikda",
+        ];
+        const mock = [];
+        for (let i = 1; i <= 150; i++) {
+          const year = YEARS[Math.floor(Math.random() * YEARS.length)];
+          const prest =
+            PRESTATIONS[Math.floor(Math.random() * PRESTATIONS.length)];
+          
+          let etat;
+          const rand = Math.random();
+          if (rand > 0.45) etat = 100;
+          else if (rand > 0.1) etat = 0;
+          else etat = "N"; // ~10% de chances d'être annulée
+
+          let anneeRealisation = "";
+          if (etat === 100) {
+            const possibleYears = YEARS.filter((y) => y >= year);
+            anneeRealisation =
+              possibleYears.length > 0
+                ? possibleYears[
+                    Math.floor(Math.random() * possibleYears.length)
+                  ]
+                : year;
+          }
+
+          const formatIndex = String(i).padStart(3, "0");
+          mock.push({
+            "Numéro de convention": `${year}-219-${formatIndex}`,
+            "Intitulé des projets": `Projet de ${prest} lot ${i}`,
+            Localité: localities[Math.floor(Math.random() * localities.length)],
+            Prestation: prest,
+            Année: year,
+            Etat: etat,
+            "Année de réalisation": anneeRealisation,
+            NbrSite: prest === "TET" ? Math.floor(Math.random() * 5) + 1 : 0
+          });
+        }
+        return mock;
+      }
+
+      // --- GESTION DES ONGLETS ET NAVIGATION ---
+      const tabTitles = {
+        dash1: "Plan de charge ",
+        dash2: "Évaluations Annuelles",
+        dash3: "Détail Prestations",
+        dash4: "Évolution des Réalisations",
+        dash5: "Reste à Réaliser",
+        dash6: "Examen TET",
+        dash7: "Analyse du Plan de Charge",
+        data: "Base de données",
+      };
+
+      function switchTab(tabId) {
+        // Cacher toutes les vues
+        ["dash1", "dash2", "dash3", "dash4", "dash5", "dash6", "dash7", "data"].forEach((id) => {
+          document.getElementById(`view-${id}`).classList.add("hidden");
+
+          // Mettre à jour l'UI des boutons (desktop)
+          const btn = document.getElementById(`tab-${id}`);
+          if (btn) {
+            btn.classList.remove("tab-active");
+            btn.classList.add("tab-inactive");
+            const icon = btn.querySelector("i");
+            if (icon) {
+              icon.classList.remove("text-blue-600");
+              icon.classList.add("text-gray-400");
+            }
+          }
+        });
+
+        // Afficher la vue ciblée
+        document.getElementById(`view-${tabId}`).classList.remove("hidden");
+
+        // Activer le bouton (desktop)
+        const activeBtn = document.getElementById(`tab-${tabId}`);
+        if (activeBtn) {
+          activeBtn.classList.remove("tab-inactive");
+          activeBtn.classList.add("tab-active");
+          const activeIcon = activeBtn.querySelector("i");
+          if (activeIcon) {
+            // Empêcher d'écraser la couleur spéciale du bouton Analyse
+            if(tabId !== 'dash7') {
+              activeIcon.classList.remove("text-gray-400");
+              activeIcon.classList.add("text-blue-600");
+            }
+          }
+        }
+
+        // Mettre à jour le titre
+        document.getElementById("page-title").textContent = tabTitles[tabId];
+
+        // Redessiner les graphiques si nécessaire pour éviter les bugs de redimensionnement de canvas cachés
+        if (tabId.startsWith("dash")) {
+          updateDashboards();
+        }
+      }
+
+      // --- FONCTION DE TRAITEMENT DES DONNÉES EXCEL ---
+      function processExcelJSON(json) {
+        // Fonction intelligente pour trouver une colonne en ignorant les accents, majuscules et espaces
+        const getCol = (row, colName) => {
+          const normalize = (str) =>
+            str
+              .toLowerCase()
+              .normalize("NFD")
+              .replace(/[\u0300-\u036f]/g, "")
+              .trim();
+          const target = normalize(colName);
+          const foundKey = Object.keys(row).find(
+            (key) => normalize(key) === target,
+          );
+          return foundKey ? row[foundKey] : undefined;
+        };
+
+        projectsData = json.map((row) => {
+          let valEtat = getCol(row, "Etat");
+          let rawEtat = String(
+            valEtat !== undefined && valEtat !== "" ? valEtat : "0",
+          ).trim().toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+          
+          let etatValue;
+          if (rawEtat === "100" || rawEtat === "1" || rawEtat === "100%") {
+            etatValue = 100;
+          } else if (rawEtat === "N" || rawEtat.includes("ANNUL") || rawEtat.includes("SUPPR")) {
+            etatValue = "N";
+          } else {
+            const parsed = parseInt(rawEtat);
+            etatValue = isNaN(parsed) ? 0 : parsed;
+          }
+
+          let prestRaw = getCol(row, "Prestation") || "Autre";
+          let matchedPrest =
+            PRESTATIONS.find((p) =>
+              String(prestRaw).toUpperCase().includes(p.toUpperCase()),
+            ) || "Autre";
+
+          let anneeReal = getCol(row, "Année de réalisation");
+          let nbrSiteRaw = getCol(row, "Nbr site") || getCol(row, "Nombre de sites") || getCol(row, "Nbr sites");
+
+          return {
+            "Numéro de convention":
+              getCol(row, "Numéro de convention") || "N/A",
+            "Intitulé des projets":
+              getCol(row, "Intitulé des projets") || "Sans titre",
+            Localité: getCol(row, "Localité") || "N/A",
+            Prestation: matchedPrest,
+            Année: parseInt(getCol(row, "Année")) || 2024,
+            Etat: etatValue,
+            "Année de réalisation": anneeReal
+              ? parseInt(anneeReal)
+              : "",
+            NbrSite: parseInt(nbrSiteRaw) || (matchedPrest === "TET" ? 1 : 0) // fallback à 1 pour TET si vide
+          };
+        });
+        
+        updateAll();
+      }
+
+      // --- IMPORT EXCEL MANUEL ---
+      document
+        .getElementById("excel-upload")
+        .addEventListener("change", function (e) {
+          const file = e.target.files[0];
+          if (!file) return;
+
+          const reader = new FileReader();
+          reader.onload = function (evt) {
+            try {
+              const data = evt.target.result;
+              const workbook = XLSX.read(data, { type: "binary" });
+              const firstSheetName = workbook.SheetNames[0];
+              const worksheet = workbook.Sheets[firstSheetName];
+              const json = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
+
+              if (json.length > 0) {
+                processExcelJSON(json);
+                alert("Fichier importé avec succès !");
+              }
+            } catch (error) {
+              alert("Erreur lors de la lecture du fichier Excel. Vérifiez le format.");
+              console.error(error);
+            }
+          };
+          reader.readAsBinaryString(file);
+        });
+
+      // --- RECHERCHE ET FILTRES ---
+      document.getElementById("search-input").addEventListener("input", (e) => {
+        currentSearch = e.target.value.toLowerCase();
+        updateTable();
+      });
+      document.getElementById("filter-prestation").addEventListener("change", (e) => {
+        currentFilterPrest = e.target.value;
+        updateTable();
+      });
+      document.getElementById("filter-etat").addEventListener("change", (e) => {
+        currentFilterEtat = e.target.value;
+        updateTable();
+      });
+
+      // --- UTILITAIRES GRAPHIQUES ---
+      function destroyChart(id) {
+        if (charts[id]) charts[id].destroy();
+      }
+
+      Chart.defaults.font.family = "'Inter', system-ui, sans-serif";
+      Chart.defaults.color = "#6b7280";
+      Chart.defaults.scale.grid.color = "#f3f4f6";
+
+      // --- MISE À JOUR DES DONNÉES (DASHBOARDS & TABLE) ---
+      function updateAll() {
+        updateKPIs();
+        updateDashboards();
+        updateTable();
+        updateAnalysis();
+      }
+
+      function updateAnalysis() {
+        const contentDiv = document.getElementById("analysis-content");
+        if (!projectsData || projectsData.length === 0) {
+          contentDiv.innerHTML = `<div class="text-gray-500 text-center py-8">Données insuffisantes pour générer une analyse.</div>`;
+          return;
+        }
+
+        // --- Paramètres Temporels ---
+        const currentDate = new Date();
+        const currentYear = currentDate.getFullYear();
+        const prevYear = currentYear - 1;
+        
+        let currentMonthDivisor = currentDate.getMonth() + 1; 
+        if (currentDate.getDate() <= 15) currentMonthDivisor -= 1;
+        if (currentMonthDivisor < 1) currentMonthDivisor = 1; 
+
+        // --- 1. Analyse Quantitative Globale ---
+        const totalActive = projectsData.filter(d => d.Etat !== "N").length;
+        const totalRealise = projectsData.filter(d => d.Etat === 100).length;
+        const totalReste = projectsData.filter(d => d.Etat !== 100 && d.Etat !== "N").length;
+        const pctRealise = totalActive > 0 ? ((totalRealise / totalActive) * 100).toFixed(1) : 0;
+
+        // --- 2. Ratios Globaux ---
+        const globalCurrentComp = projectsData.filter(d => d.Etat === 100 && d["Année de réalisation"] === currentYear).length;
+        const globalPrevComp = projectsData.filter(d => d.Etat === 100 && d["Année de réalisation"] === prevYear).length;
+        
+        const ratioGlobalCurrent = parseFloat((globalCurrentComp / currentMonthDivisor).toFixed(2));
+        const ratioGlobalPrev = parseFloat((globalPrevComp / 12).toFixed(2));
+        
+        const tendanceGlobal = ratioGlobalCurrent >= ratioGlobalPrev ? "en hausse" : "en baisse";
+        const colorGlobal = ratioGlobalCurrent >= ratioGlobalPrev ? "text-emerald-600" : "text-amber-600";
+        const iconGlobal = ratioGlobalCurrent >= ratioGlobalPrev ? "trending-up" : "trending-down";
+
+        // --- 3. Ratios Spécifiques (Diag, Eval, Exp) ---
+        const targetPrest = ["Diagnostic", "Evaluation", "Expertise"];
+        const specCurrentComp = projectsData.filter(d => d.Etat === 100 && d["Année de réalisation"] === currentYear && targetPrest.includes(d.Prestation)).length;
+        const specPrevComp = projectsData.filter(d => d.Etat === 100 && d["Année de réalisation"] === prevYear && targetPrest.includes(d.Prestation)).length;
+
+        const ratioSpecCurrent = parseFloat((specCurrentComp / currentMonthDivisor).toFixed(2));
+        const ratioSpecPrev = parseFloat((specPrevComp / 12).toFixed(2));
+        const tendanceSpec = ratioSpecCurrent >= ratioSpecPrev ? "en hausse" : "en baisse";
+
+        // --- 4. Examen TET ---
+        const tetCurrent = projectsData.filter(d => d.Prestation === "TET" && d.Année === currentYear).reduce((sum, d) => sum + (d.NbrSite || 0), 0);
+        const tetPrev = projectsData.filter(d => d.Prestation === "TET" && d.Année === prevYear).reduce((sum, d) => sum + (d.NbrSite || 0), 0);
+        const tetDiff = tetCurrent - tetPrev;
+
+        // --- 5. Logique d'Argumentation (Corrélation) ---
+        let argumentText = "";
+        if (ratioSpecCurrent < ratioSpecPrev) {
+          if (tetDiff > 0) {
+            argumentText = `<div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-lg mt-4">
+              <p class="text-sm text-blue-800 font-medium flex items-start">
+                <i data-lucide="info" class="w-5 h-5 mr-2 flex-shrink-0 mt-0.5"></i>
+                <span><strong>Corrélation identifiée :</strong> La baisse du rythme de production sur les prestations classiques (${ratioSpecCurrent} vs ${ratioSpecPrev} /mois) 
+                est largement justifiée par l'augmentation significative de la charge de travail liée aux examens TET. 
+                En effet, le volume des sites à examiner est passé de ${tetPrev} l'année dernière à ${tetCurrent} cette année (+${tetDiff} sites), 
+                ce qui a nécessité une mobilisation accrue des ingénieurs sur le terrain au détriment des livrables de diagnostic et d'évaluation.</span>
+              </p>
+            </div>`;
+          } else {
+             argumentText = `<div class="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-r-lg mt-4">
+              <p class="text-sm text-amber-800 font-medium flex items-start">
+                <i data-lucide="alert-triangle" class="w-5 h-5 mr-2 flex-shrink-0 mt-0.5"></i>
+                <span><strong>Point d'attention :</strong> Le rythme de réalisation des prestations classiques est en baisse par rapport à l'année dernière. 
+                De plus, le volume d'examen TET n'a pas augmenté (actuellement à ${tetCurrent} sites). Il conviendrait d'analyser d'autres facteurs 
+                (absentéisme, complexité des dossiers, etc.) pour expliquer ce ralentissement.</span>
+              </p>
+            </div>`;
+          }
+        } else {
+           if (tetDiff > 0) {
+              argumentText = `<div class="bg-emerald-50 border-l-4 border-emerald-500 p-4 rounded-r-lg mt-4">
+                <p class="text-sm text-emerald-800 font-medium flex items-start">
+                  <i data-lucide="check-circle" class="w-5 h-5 mr-2 flex-shrink-0 mt-0.5"></i>
+                  <span><strong>Excellente performance :</strong> L'équipe maintient (ou améliore) son rythme de production sur les prestations classiques 
+                  (${ratioSpecCurrent} vs ${ratioSpecPrev} /mois) tout en absorbant une charge TET supplémentaire (+${tetDiff} sites par rapport à l'année précédente). 
+                  Cela dénote une optimisation très efficace du temps de travail.</span>
+                </p>
+              </div>`;
+           } else {
+              argumentText = `<p class="text-gray-600 mt-4 text-sm"><i data-lucide="check" class="w-4 h-4 inline text-emerald-500 mr-1"></i> La cadence de production spécifique est maintenue à un bon niveau par rapport à l'historique récent.</p>`;
+           }
+        }
+
+        // --- 6. Rendu HTML final ---
+        contentDiv.innerHTML = `
+          <!-- Section 1 : État des lieux -->
+          <div class="border-b border-gray-100 pb-6">
+            <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
+              <span class="bg-purple-100 text-purple-600 p-1.5 rounded-lg mr-3"><i data-lucide="briefcase" class="w-5 h-5"></i></span>
+              1. Volume et État du Plan de Charge
+            </h3>
+            <p class="text-gray-600 leading-relaxed">
+              Le plan de charge actuel est composé d'un total de <strong>${totalActive} affaires actives</strong> (hors projets annulés). 
+              À ce jour, <strong>${totalRealise} projets</strong> ont été entièrement réalisés, ce qui représente un taux d'avancement global de <strong>${pctRealise}%</strong>. 
+              Il reste donc <strong>${totalReste} prestations</strong> en attente ou en cours de traitement (&lt;100%).
+            </p>
+          </div>
+
+          <!-- Section 2 : Rythme Global -->
+          <div class="border-b border-gray-100 pb-6">
+            <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
+              <span class="bg-blue-100 text-blue-600 p-1.5 rounded-lg mr-3"><i data-lucide="activity" class="w-5 h-5"></i></span>
+              2. Rythme d'Écoulement Global
+            </h3>
+            <p class="text-gray-600 leading-relaxed mb-4">
+              L'analyse des cadences montre que le ratio global de réalisation pour l'année en cours (${currentYear}) s'établit à 
+              <strong class="${colorGlobal} text-lg">${ratioGlobalCurrent} affaires/mois</strong>. 
+              En comparaison, le rythme moyen observé lors de l'année précédente (${prevYear}) était de <strong>${ratioGlobalPrev} affaires/mois</strong>.
+            </p>
+            <div class="flex items-center text-sm font-medium ${colorGlobal} bg-gray-50 p-3 rounded-lg border border-gray-100 w-fit">
+              <i data-lucide="${iconGlobal}" class="w-5 h-5 mr-2"></i>
+              La productivité globale est ${tendanceGlobal} par rapport à l'année précédente.
+            </div>
+          </div>
+
+          <!-- Section 3 : Prestations Spécifiques & Argumentation TET -->
+          <div>
+            <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
+              <span class="bg-indigo-100 text-indigo-600 p-1.5 rounded-lg mr-3"><i data-lucide="target" class="w-5 h-5"></i></span>
+              3. Focus Prestations Techniques & Examen TET
+            </h3>
+            <p class="text-gray-600 leading-relaxed mb-2">
+              En isolant les prestations à forte valeur technique (Diagnostics, Évaluations, Expertises), on constate un rythme de 
+              <strong>${ratioSpecCurrent} réalisations/mois</strong> cette année, contre <strong>${ratioSpecPrev} /mois</strong> en ${prevYear}.
+            </p>
+            
+            ${argumentText}
+          </div>
+        `;
+        
+        // Rafraîchir les icônes injectées
+        lucide.createIcons();
+      }
+
+      function updateKPIs() {
+        const total = projectsData.length;
+        const comp = projectsData.filter((p) => p.Etat === 100).length;
+        const annulees = projectsData.filter((p) => p.Etat === "N").length;
+        const reste = projectsData.filter((p) => p.Etat !== 100 && p.Etat !== "N").length;
+
+        document.getElementById("kpi-total").textContent = total;
+        document.getElementById("kpi-100").textContent = comp;
+        document.getElementById("kpi-100-sub").textContent =
+          total > 0 ? `${((comp / total) * 100).toFixed(1)}% du global` : "0%";
+        document.getElementById("kpi-0").textContent = reste;
+        document.getElementById("kpi-n").textContent = annulees;
+      }
+
+      function updateDashboards() {
+        // -- PREPARATION DES DONNEES --
+        const prestCounts = PRESTATIONS.map(
+          (p) => projectsData.filter((d) => d.Prestation === p && d.Etat !== "N").length,
+        );
+        const colorsArray = PRESTATIONS.map((p) => COLORS[p]);
+
+        // ================= DASH 1 =================
+        destroyChart("d1-bar");
+        charts["d1-bar"] = new Chart(document.getElementById("chart-d1-bar"), {
+          type: "bar",
+          data: {
+            labels: PRESTATIONS,
+            datasets: [{ data: prestCounts, backgroundColor: colorsArray, borderRadius: 6 }],
+          },
+          options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } },
+        });
+
+        destroyChart("d1-pie");
+        charts["d1-pie"] = new Chart(document.getElementById("chart-d1-pie"), {
+          type: "doughnut",
+          data: {
+            labels: PRESTATIONS,
+            datasets: [{ data: prestCounts, backgroundColor: colorsArray, borderWidth: 0 }],
+          },
+          options: { responsive: true, maintainAspectRatio: false, cutout: "65%", plugins: { legend: { position: "right" } } },
+        });
+
+        const d1StackedDatasets = PRESTATIONS.map((p) => ({
+          label: p,
+          data: YEARS.map((y) => projectsData.filter((d) => d.Année === y && d.Etat !== "N" && d.Prestation === p).length),
+          backgroundColor: COLORS[p],
+        }));
+
+        destroyChart("d1-stacked");
+        charts["d1-stacked"] = new Chart(document.getElementById("chart-d1-stacked"), {
+            type: "bar",
+            data: { labels: YEARS, datasets: d1StackedDatasets },
+            options: { responsive: true, maintainAspectRatio: false, scales: { x: { stacked: true }, y: { stacked: true } } },
+        });
+
+        // ================= DASH 2 =================
+        const d2Status100 = YEARS.map((y) => projectsData.filter((d) => d.Année === y && d.Etat === 100).length);
+        const d2Status0 = YEARS.map((y) => projectsData.filter((d) => d.Année === y && d.Etat !== 100 && d.Etat !== "N").length);
+
+        destroyChart("d2-status");
+        charts["d2-status"] = new Chart(document.getElementById("chart-d2-status"), {
+          type: "bar",
+          data: {
+            labels: YEARS,
+            datasets: [
+              { label: "100% (Établi)", data: d2Status100, backgroundColor: COLORS["Expertise"], borderRadius: 4 },
+              { label: "Reste à Réaliser (<100%)", data: d2Status0, backgroundColor: COLORS["Evaluation"], borderRadius: 4 },
+            ],
+          },
+          options: { responsive: true, maintainAspectRatio: false },
+        });
+
+        const d2PrestDatasets = PRESTATIONS.map((p) => ({
+          label: p,
+          data: YEARS.map((y) => projectsData.filter((d) => d.Année === y && d.Etat === 100 && d.Prestation === p).length),
+          backgroundColor: COLORS[p],
+        }));
+
+        destroyChart("d2-prest");
+        charts["d2-prest"] = new Chart(document.getElementById("chart-d2-prest"), {
+          type: "bar",
+          data: { labels: YEARS, datasets: d2PrestDatasets },
+          options: { responsive: true, maintainAspectRatio: false, scales: { x: { stacked: true }, y: { stacked: true } } },
+        });
+
+        // ================= DASH 3 =================
+        const d3Cards = document.getElementById("dash3-cards");
+        d3Cards.innerHTML = "";
+        PRESTATIONS.forEach((p, i) => {
+          const count = prestCounts[i];
+          const totalActive = projectsData.filter((d) => d.Etat !== "N").length;
+          const pct = totalActive > 0 ? ((count / totalActive) * 100).toFixed(1) : 0;
+          d3Cards.innerHTML += `
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 border-t-4" style="border-top-color: ${COLORS[p]}">
+                        <div class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">${p}</div>
+                        <div class="text-2xl font-black text-gray-800">${count}</div>
+                        <div class="text-xs text-gray-500 mt-1">${pct}% du total actif</div>
+                    </div>`;
+        });
+
+        const realizedPrestCounts = PRESTATIONS.map((p) => projectsData.filter((d) => d.Prestation === p && d.Etat === 100).length);
+        const activePrestCountsD3 = PRESTATIONS.map((p) => projectsData.filter((d) => d.Prestation === p && d.Etat !== "N").length);
+
+        const canvasD3Mag = document.getElementById("chart-d3-magnifique");
+        if(canvasD3Mag) {
+            const ctxD3Mag = canvasD3Mag.getContext("2d");
+            const gradientsD3 = colorsArray.map(color => {
+                const gradient = ctxD3Mag.createLinearGradient(0, 400, 0, 0);
+                gradient.addColorStop(0, color + '80');
+                gradient.addColorStop(1, color);
+                return gradient;
+            });
+
+            destroyChart("d3-magnifique");
+            charts["d3-magnifique"] = new Chart(ctxD3Mag, {
+              type: "bar",
+              data: {
+                labels: PRESTATIONS,
+                datasets: [{ label: "Réalisées (100%)", data: realizedPrestCounts, backgroundColor: gradientsD3, borderColor: colorsArray, borderWidth: { top: 3, right: 0, bottom: 0, left: 0 }, borderRadius: 8, barPercentage: 0.65 }],
+              },
+              options: { layout: { padding: { top: 30 } }, responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false }, ticks: { font: { weight: 'bold' } } }, y: { grid: { color: '#f3f4f6', drawBorder: false } } } },
+            });
+        }
+
+        const d3RealizedDatasets = PRESTATIONS.map((p) => ({
+          label: p,
+          data: YEARS.map((y) => projectsData.filter((d) => d.Etat === 100 && d.Prestation === p && (d["Année de réalisation"] === y || (!d["Année de réalisation"] && d.Année === y))).length),
+          backgroundColor: COLORS[p],
+        }));
+
+        destroyChart("d3-realized");
+        charts["d3-realized"] = new Chart(document.getElementById("chart-d3-realized"), {
+          type: "bar",
+          data: { labels: YEARS, datasets: d3RealizedDatasets },
+          options: { responsive: true, maintainAspectRatio: false },
+        });
+
+        // ================= DASH 4 : CALCUL DES RATIOS COMMUNS =================
+        const currentDate = new Date();
+        const currentYear = currentDate.getFullYear();
+        let currentMonthDivisor = currentDate.getMonth() + 1; 
+        if (currentDate.getDate() <= 15) {
+            currentMonthDivisor -= 1; 
+        }
+        if (currentMonthDivisor < 1) currentMonthDivisor = 1; 
+
+        // 1. Ratio GLOBAL (Toutes prestations confondues)
+        const d4RatioGlobalData = YEARS.map(y => {
+            const total = projectsData.filter((d) => d.Etat === 100 && d["Année de réalisation"] === y).length;
+            const divisor = (y === currentYear) ? currentMonthDivisor : 12;
+            return parseFloat((total / divisor).toFixed(2));
+        });
+
+        // Labels pour les graphiques en barres (Année + Ratio en dessous)
+        const labelsWithRatioGlobal = YEARS.map((y, index) => [
+            y.toString(), 
+            `Ratio: ${d4RatioGlobalData[index]}`
+        ]);
+
+        // 2. Ratio SPÉCIFIQUE (Diag, Eval, Exp)
+        const targetPrestationsDash4 = ["Diagnostic", "Evaluation", "Expertise"];
+        const d4RatioSpecifiqueData = YEARS.map(y => {
+            const total = projectsData.filter((d) => d.Etat === 100 && d["Année de réalisation"] === y && targetPrestationsDash4.includes(d.Prestation)).length;
+            const divisor = (y === currentYear) ? currentMonthDivisor : 12;
+            return parseFloat((total / divisor).toFixed(2));
+        });
+
+        const labelsWithRatioSpecifique = YEARS.map((y, index) => [
+            y.toString(), 
+            `Ratio: ${d4RatioSpecifiqueData[index]}`
+        ]);
+
+
+        // ================= DASH 4 : GRAPHIQUES GLOBAUX =================
+        const d4Trend = YEARS.map((y) => projectsData.filter((d) => d.Etat === 100 && d["Année de réalisation"] === y).length);
+        
+        destroyChart("d4-trend");
+        charts["d4-trend"] = new Chart(document.getElementById("chart-d4-trend"), {
+          type: "line",
+          data: { labels: YEARS, datasets: [{ label: "Réalisations  (Global)", data: d4Trend, borderColor: "#6366f1", backgroundColor: "rgba(99, 102, 241, 0.2)", borderWidth: 3, pointBackgroundColor: "#6366f1", fill: true, tension: 0.3 }] },
+          options: { responsive: true, maintainAspectRatio: false },
+        });
+
+        const d4PrestDatasets = PRESTATIONS.map((p) => ({
+          label: p,
+          data: YEARS.map((y) => projectsData.filter((d) => d.Etat === 100 && d["Année de réalisation"] === y && d.Prestation === p).length),
+          backgroundColor: COLORS[p],
+        }));
+
+        destroyChart("d4-prest");
+        charts["d4-prest"] = new Chart(document.getElementById("chart-d4-prest"), {
+          type: "bar",
+          data: { labels: labelsWithRatioGlobal, datasets: d4PrestDatasets },
+          options: { 
+              layout: { padding: { top: 25 } },
+              responsive: true, maintainAspectRatio: false, 
+              scales: { 
+                  x: { stacked: true, ticks: { font: { size: 11, family: "'Inter', sans-serif" }, color: '#4b5563'} }, 
+                  y: { stacked: true } 
+              } 
+          },
+        });
+
+        // ================= DASH 4 : GRAPHIQUES SPÉCIFIQUES =================
+        const d4TrendDiagEval = YEARS.map((y) => projectsData.filter((d) => d.Etat === 100 && d["Année de réalisation"] === y && targetPrestationsDash4.includes(d.Prestation)).length);
+
+        destroyChart("d4-trend-diageval");
+        charts["d4-trend-diageval"] = new Chart(document.getElementById("chart-d4-trend-diageval"), {
+          type: "line",
+          data: { labels: YEARS, datasets: [{ label: "Réalisations  (Diag., Éval. & Exp.)", data: d4TrendDiagEval, borderColor: "#3b82f6", backgroundColor: "rgba(59, 130, 246, 0.2)", borderWidth: 3, pointBackgroundColor: "#3b82f6", fill: true, tension: 0.3 }] },
+          options: { responsive: true, maintainAspectRatio: false },
+        });
+
+        const d4PrestDatasetsDiagEval = targetPrestationsDash4.map((p) => ({
+          label: p,
+          data: YEARS.map((y) => projectsData.filter((d) => d.Etat === 100 && d["Année de réalisation"] === y && d.Prestation === p).length),
+          backgroundColor: COLORS[p],
+        }));
+
+        destroyChart("d4-prest-diageval");
+        charts["d4-prest-diageval"] = new Chart(document.getElementById("chart-d4-prest-diageval"), {
+            type: "bar",
+            data: { labels: labelsWithRatioSpecifique, datasets: d4PrestDatasetsDiagEval },
+            options: {
+              layout: { padding: { top: 25 } },
+              responsive: true, maintainAspectRatio: false,
+              plugins: { legend: { display: false } },
+              scales: { 
+                x: { stacked: true, ticks: { font: { size: 11, family: "'Inter', sans-serif" }, color: '#4b5563'} }, 
+                y: { stacked: true } 
+              },
+            }
+        });
+
+        // ================= DASH 4 : GRAPHIQUES DES RATIOS EN COURBES =================
+        
+        // Courbe du Ratio Global (Indigo)
+        destroyChart("d4-ratio-global-line");
+        charts["d4-ratio-global-line"] = new Chart(document.getElementById("chart-d4-ratio-global-line"), {
+            type: "line",
+            data: {
+                labels: YEARS,
+                datasets: [{
+                    label: "Ratio Mensuel Global",
+                    data: d4RatioGlobalData,
+                    borderColor: "#6366f1", // Indigo
+                    backgroundColor: "rgba(99, 102, 241, 0.2)", 
+                    borderWidth: 3,
+                    pointBackgroundColor: "#6366f1",
+                    pointBorderColor: "#ffffff",
+                    pointBorderWidth: 2,
+                    pointRadius: 5,
+                    fill: true, 
+                    tension: 0.4 
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: { callbacks: { label: function(context) { return ` Ratio : ${context.parsed.y} réalisations / mois`; } } }
+                },
+                scales: {
+                    y: { beginAtZero: true, grid: { borderDash: [5, 5] } },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+
+        // Courbe du Ratio Spécifique (Bleu Clair)
+        destroyChart("d4-ratio-line");
+        charts["d4-ratio-line"] = new Chart(document.getElementById("chart-d4-ratio-line"), {
+            type: "line",
+            data: {
+                labels: YEARS,
+                datasets: [{
+                    label: "Ratio Mensuel (Diag., Éval. & Exp.)",
+                    data: d4RatioSpecifiqueData,
+                    borderColor: "#3b82f6", // Bleu classique
+                    backgroundColor: "rgba(59, 130, 246, 0.2)", 
+                    borderWidth: 3,
+                    pointBackgroundColor: "#3b82f6",
+                    pointBorderColor: "#ffffff",
+                    pointBorderWidth: 2,
+                    pointRadius: 5,
+                    fill: true, 
+                    tension: 0.4 
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: { callbacks: { label: function(context) { return ` Ratio : ${context.parsed.y} réalisations / mois`; } } }
+                },
+                scales: {
+                    y: { beginAtZero: true, grid: { borderDash: [5, 5] } },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+
+        // ================= DASH 5 =================
+        const d5PrestDatasets = PRESTATIONS.map((p) => ({
+          label: p,
+          data: YEARS.map((y) => projectsData.filter((d) => d.Année === y && d.Etat !== 100 && d.Etat !== "N" && d.Prestation === p).length),
+          backgroundColor: COLORS[p],
+        }));
+
+        destroyChart("d5-stacked");
+        charts["d5-stacked"] = new Chart(document.getElementById("chart-d5-stacked"), {
+          type: "bar",
+          data: { labels: YEARS, datasets: d5PrestDatasets },
+          options: { responsive: true, maintainAspectRatio: false, scales: { x: { stacked: true }, y: { stacked: true } } },
+        });
+
+        const d5PieData = PRESTATIONS.map((p) => projectsData.filter((d) => d.Etat !== 100 && d.Etat !== "N" && d.Prestation === p).length);
+
+        destroyChart("d5-pie");
+        charts["d5-pie"] = new Chart(document.getElementById("chart-d5-pie"), {
+          type: "doughnut",
+          data: { labels: PRESTATIONS, datasets: [{ data: d5PieData, backgroundColor: colorsArray, borderWidth: 0 }] },
+          options: { responsive: true, maintainAspectRatio: false, cutout: "65%", plugins: { legend: { position: "right" } } },
+        });
+
+        const d5AnnuleDatasets = PRESTATIONS.map((p) => ({
+          label: p,
+          data: YEARS.map((y) => projectsData.filter((d) => d.Année === y && d.Etat === "N" && d.Prestation === p).length),
+          backgroundColor: COLORS[p],
+        }));
+
+        destroyChart("d5-annulees");
+        charts["d5-annulees"] = new Chart(document.getElementById("chart-d5-annulees"), {
+          type: "bar",
+          data: { labels: YEARS, datasets: d5AnnuleDatasets },
+          options: { responsive: true, maintainAspectRatio: false, scales: { x: { stacked: false }, y: { beginAtZero: true, ticks: { precision: 0 } } } },
+        });
+
+        // ================= DASH 6 (TET) =================
+        const d6TetData = YEARS.map(y => {
+            // Additionne NbrSite pour TOUTES les affaires TET (quel que soit l'état), pour l'année de l'affaire
+            return projectsData
+                .filter(d => d.Prestation === "TET" && d.Année === y)
+                .reduce((sum, d) => sum + (d.NbrSite || 0), 0);
+        });
+
+        destroyChart("d6-tet");
+        charts["d6-tet"] = new Chart(document.getElementById("chart-d6-tet"), {
+            type: "line",
+            data: {
+                labels: YEARS,
+                datasets: [{
+                    label: "Nombre de Sites Examinés (TET)",
+                    data: d6TetData,
+                    borderColor: "#8b5cf6", // Violet correspondant à TET
+                    backgroundColor: "rgba(139, 92, 246, 0.2)",
+                    borderWidth: 3,
+                    pointBackgroundColor: "#8b5cf6",
+                    pointBorderColor: "#ffffff",
+                    pointBorderWidth: 2,
+                    pointRadius: 5,
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: { callbacks: { label: function(context) { return ` ${context.parsed.y} sites examinés`; } } }
+                },
+                scales: {
+                    y: { beginAtZero: true, grid: { borderDash: [5, 5] }, ticks: { precision: 0 } },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+      }
+
+      function updateTable() {
+        const tbody = document.getElementById("table-body");
+        tbody.innerHTML = "";
+
+        const filtered = projectsData.filter(
+          (d) => {
+            const matchSearch = String(d["Numéro de convention"])
+              .toLowerCase()
+              .includes(currentSearch) ||
+            String(d["Intitulé des projets"])
+              .toLowerCase()
+              .includes(currentSearch) ||
+            String(d["Localité"]).toLowerCase().includes(currentSearch);
+            
+            const matchPrest = currentFilterPrest === "all" || d.Prestation === currentFilterPrest;
+            
+            let matchEtat = true;
+            if (currentFilterEtat === "100") matchEtat = d.Etat === 100;
+            else if (currentFilterEtat === "0") matchEtat = d.Etat !== 100 && d.Etat !== "N";
+            else if (currentFilterEtat === "N") matchEtat = d.Etat === "N";
+
+            return matchSearch && matchPrest && matchEtat;
+          }
+        );
+
+        document.getElementById("table-count").textContent =
+          `${filtered.length} projets listés`;
+
+        if (filtered.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="7" class="px-6 py-12 text-center text-gray-500">Aucun projet trouvé avec ces filtres.</td></tr>`;
+          return;
+        }
+
+        filtered.forEach((p) => {
+          const color = COLORS[p.Prestation] || COLORS["Autre"];
+
+          let badgeEtat;
+          if (p.Etat === 100) {
+            badgeEtat = `<span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700 border border-emerald-200">
+                        <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg> 100%
+                       </span>`;
+          } else if (p.Etat === "N") {
+            badgeEtat = `<span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-700 border border-gray-300">
+                        <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path></svg> Annulée (N)
+                       </span>`;
+          } else {
+            badgeEtat = `<span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700 border border-red-200">
+                        <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg> ${p.Etat}%
+                       </span>`;
+          }
+
+          tbody.innerHTML += `
+                    <tr class="hover:bg-blue-50/50 transition-colors">
+                        <td class="px-6 py-4 whitespace-nowrap font-semibold text-gray-900">${p["Numéro de convention"]}</td>
+                        <td class="px-6 py-4 text-gray-600 max-w-xs truncate" title="${p["Intitulé des projets"]}">${p["Intitulé des projets"]}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-gray-600">${p["Localité"]}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="px-3 py-1 rounded-full text-xs font-medium border" style="color: ${color}; border-color: ${color}; background-color: transparent">
+                                ${p.Prestation}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-gray-500 font-medium">${p.Année}</td>
+                      <td class="px-6 py-4 whitespace-nowrap">${badgeEtat}</td>
+                      <td class="px-6 py-4 whitespace-nowrap text-gray-500 font-bold">${p["Année de réalisation"] || "-"}</td>
+                      <td class="px-6 py-4 whitespace-nowrap text-gray-700 font-bold">${p.NbrSite > 0 ? p.NbrSite : "-"}</td>
+                  </tr>
+              `;
+        });
+      }
+
+      // --- LANCEMENT AUTOMATIQUE ---
+      window.onload = async () => {
+        try {
+          // Tentative de chargement automatique du fichier Plan2026.xlsx
+          const response = await fetch('./Plan2026.xlsx');
+          
+          if (!response.ok) {
+            throw new Error(`Fichier introuvable (${response.status})`);
+          }
+          
+          const arrayBuffer = await response.arrayBuffer();
+          const data = new Uint8Array(arrayBuffer);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const firstSheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[firstSheetName];
+          const json = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
+
+          if (json.length > 0) {
+            processExcelJSON(json);
+            console.log("Fichier Plan2026.xlsx chargé automatiquement !");
+            
+            const notif = document.createElement('div');
+            notif.className = "fixed bottom-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg text-sm font-medium z-50 fade-in";
+            notif.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4 inline mr-2"></i>Plan2026.xlsx chargé automatiquement';
+            document.body.appendChild(notif);
+            lucide.createIcons();
+            setTimeout(() => notif.remove(), 4000);
+          } else {
+            throw new Error("Le fichier Excel est vide.");
+          }
+          
+        } catch (error) {
+          console.warn("Impossible de charger Plan2026.xlsx automatiquement. Chargement des données de démonstration.", error);
+          projectsData = generateMockData();
+          updateAll();
+        }
+      };
+    </script>
+  </body>
+</html>
